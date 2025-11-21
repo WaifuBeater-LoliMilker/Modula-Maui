@@ -1,0 +1,20 @@
+﻿@page "/login"
+<div class="h-100 px-3 d-flex flex-column justify-content-center pt-3 main-background">
+    <button class="btn btn-outline-light btn-settings" @onclick="OnSettingClicked">
+        <img class="setting-icon" src="imgs/settings.png" />
+    </button>
+    <img class="mx-auto py-3" src="imgs/rtc_icon.png" />
+    <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="username" placeholder="Username" autofocus @bind="username"
+               @bind:event="oninput" @ref="usernameInput" @onkeyup="OnUsernameKeyUp" tabindex="1">
+        <label for="username">Username</label>
+    </div>
+    <div class="form-floating mb-3">
+        <input type="password" class="form-control" id="password" placeholder="Password" @bind="password"
+               @bind:event="oninput" @ref="passwordInput" @onkeyup="OnPasswordKeyUp" tabindex="2">
+        <label for="password">Password</label>
+    </div>
+    <button class="btn btn-primary" @onclick="OnSubmit" tabindex="3">
+        <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign in
+    </button>
+</div>
