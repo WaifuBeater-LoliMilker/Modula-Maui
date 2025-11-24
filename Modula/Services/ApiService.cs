@@ -17,7 +17,7 @@ namespace Modula.Services
 
         public ApiService()
         {
-            var baseURL = Preferences.Get("BaseURL", null) ?? "http://10.20.29.65:8088/rerpapi/api/";
+            var baseURL = Preferences.Get("API_URL", "http://10.20.29.65:8088/rerpapi/api/");
             Client = new HttpClient
             {
                 BaseAddress = new Uri(baseURL)

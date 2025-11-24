@@ -1,5 +1,60 @@
-﻿<h3>Home</h3>
+﻿@page "/"
 
-@code {
+<div class="h-100 d-flex flex-column pb-2">
+    <div class="header d-flex p-1">
+        <button class="btn text-light"><i class="fa-solid fa-bars"></i></button>
+        <div class="flex-grow-1"></div>
+        <button class="btn fw-bold">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            <span class="text-light btn-action">TẢI LẠI</span>
+        </button>
+        <button class="btn fw-bold">
+            <i class="fa-solid fa-download"></i>
+            <span class="text-light btn-action">GỌI</span>
+        </button>
+        <button class="btn fw-bold">
+            <i class="fa-solid fa-upload"></i>
+            <span class="text-light btn-action">TRẢ</span>
+        </button>
+        <button class="btn fw-bold">
+            <i class="fa-solid fa-check"></i>
+            <span class="text-light btn-action">HOÀN THÀNH</span>
+        </button>
+    </div>
+    <div class="table-container px-2 pt-1">
+        <table class="table table-bordered table-striped border-primary">
+            <thead class="table-light">
+                <tr class="border-primary sticky-top">
+                    <th class="text-center align-middle">
+                        <input type="checkbox" @onchange="ToggleSelectAll" />
+                    </th>
+                    <th>Mã sản phẩm</th>
+                    <th>Tên sản phẩm</th>
+                    <th>QRCode</th>
+                    <th>Vị trí</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
 
-}
+            <tbody>
+                @foreach (var item in Products)
+                {
+                    <tr class="@(item == FocusedRow ? "table-active" : "")"
+                        @onclick="() => OnRowClick(item)">
+
+                        <td class="text-center align-middle">
+                            <input type="checkbox"
+                                   checked="@item.IsSelected"
+                                   @onchange="(e) => ToggleSingle(item, e)" />
+                        </td>
+                        <td>@item.Code</td>
+                        <td>@item.Name</td>
+                        <td>@item.QRCodeUrl</td>
+                        <td>@item.Location</td>
+                        <td>@item.Status</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

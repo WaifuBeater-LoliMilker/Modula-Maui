@@ -1,1 +1,20 @@
-﻿
+﻿.header{
+    height: 50px;
+    background-color: #0094ff
+}
+.table-container{
+    flex-grow: 1;
+    overflow: auto;
+}
+.table-active {
+    --bs-table-color-state: #ffffff;
+    --bs-table-bg-state: #63b2eb;
+}
+thead th{
+    background-color: #abcfe9
+}
+@media (max-width: 520px) {
+    .btn-action {
+        display: none;
+    }
+}

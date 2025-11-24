@@ -5,16 +5,17 @@
     </button>
     <img class="mx-auto py-3" src="imgs/rtc_icon.png" />
     <div class="form-floating mb-3">
-        <input type="text" class="form-control" id="username" placeholder="Username" autofocus @bind="username"
+        <input type="text" class="form-control" id="username" placeholder="Tên đăng nhập" autofocus @bind="username"
                @bind:event="oninput" @ref="usernameInput" @onkeyup="OnUsernameKeyUp" tabindex="1">
-        <label for="username">Username</label>
+        <label for="username">Tên đăng nhập</label>
     </div>
     <div class="form-floating mb-3">
-        <input type="password" class="form-control" id="password" placeholder="Password" @bind="password"
+        <input type="password" class="form-control" id="password" placeholder="Mật khẩu" @bind="password"
                @bind:event="oninput" @ref="passwordInput" @onkeyup="OnPasswordKeyUp" tabindex="2">
-        <label for="password">Password</label>
+        <label for="password">Mật khẩu</label>
     </div>
     <button class="btn btn-primary" @onclick="OnSubmit" tabindex="3">
-        <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign in
+        <i class="fa-solid fa-arrow-right-to-bracket"></i> Đăng nhập
     </button>
 </div>
+@* <NavigationLock OnBeforeInternalNavigation="OnBeforeInternalNaviagetion"></NavigationLock> *@
