@@ -18,3 +18,6 @@ thead th{
         display: none;
     }
 }
+#side_bar{
+    width: min(280px, 70%);
+}

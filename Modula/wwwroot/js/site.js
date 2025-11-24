@@ -7,6 +7,10 @@ window.setFocusById = function (id) {
     const el = document.getElementById(id);
     if (el) el.focus();
 };
+window.removeElement = function (selector) {
+    const el = document.querySelector(selector);
+    if (el) el.remove();
+};
 window.clearInputById = function (id) {
     const el = document.getElementById(id);
     if (el) el.value = "";

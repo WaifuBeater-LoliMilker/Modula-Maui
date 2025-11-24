@@ -25,10 +25,9 @@ namespace Modula.Components.Pages
         private ElementReference usernameInput;
         private ElementReference passwordInput;
 
-        protected override Task OnAfterRenderAsync(bool firstRender)
+        protected override void OnInitialized()
         {
             _apiService.RemoveToken();
-            return Task.CompletedTask;
         }
 
         public async Task OnUsernameKeyUp(KeyboardEventArgs e)
@@ -69,8 +68,8 @@ namespace Modula.Components.Pages
                 if (!response.IsSuccessStatusCode)
                 {
                     var error = JsonConvert.DeserializeObject<GenericAPIResponse<LogInInfo>>(json);
-                    throw new Exception(
-                        string.IsNullOrEmpty(error?.message) ? error?.message : "Đã có lỗi xảy ra");
+                    var message = error?.message ?? "";
+                    throw new Exception(string.IsNullOrEmpty(message) ? "Đã có lỗi xảy ra" : message);
                 }
 
                 var accountInfo = JsonConvert.DeserializeObject<LogInInfo>(json);

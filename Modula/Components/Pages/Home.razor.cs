@@ -1,4 +1,9 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
+using Modula.Models;
+using Modula.Models.DTO;
+using Modula.Services;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,14 +14,23 @@ namespace Modula.Components.Pages
 {
     public partial class Home
     {
-        private Product? FocusedRow { get; set; }
-        public List<Product> SelectedRows => Products.Where(p => p.IsSelected).ToList();
-        public List<Product> Products { get; set; } = new()
+        [Inject] private NavigationManager Nav { get; set; } = default!;
+        [Inject] private IJSRuntime JS { get; set; } = default!;
+        [Inject] private IApiService _apiService { get; set; } = default!;
+        [Inject] private IAlertService _alertService { get; set; } = default!;
+        private bool IsSelectAll;
+        private BorrowTicket? FocusedRow { get; set; }
+        public List<BorrowTicket> SelectedRows => BorrowTickets.Where(p => p.IsSelected).ToList();
+        public List<BorrowTicket> BorrowTickets { get; set; } = [];
+        public Home()
         {
-            new Product { Code = "SP001", Name = "Sản phẩm A", QRCodeUrl = "images/qr1.png", Location = "Kho A1", Status = "Active" },
-            new Product { Code = "SP002", Name = "Sản phẩm B", QRCodeUrl = "images/qr2.png", Location = "Kho B2", Status = "Inactive" }
-        };
-        private void OnRowClick(Product item)
+
+        }
+        protected override async Task OnInitializedAsync()
+        {
+            await LoadData();
+        }
+        private void OnRowClick(BorrowTicket item)
         {
             FocusedRow = item;
         }
@@ -24,24 +38,138 @@ namespace Modula.Components.Pages
         {
             bool check = (bool)(e.Value ?? false);
 
-            foreach (var p in Products)
+            foreach (var p in BorrowTickets)
                 p.IsSelected = check;
 
             FocusedRow = null;
         }
 
-        private void ToggleSingle(Product item, ChangeEventArgs e)
+        private void ToggleSingle(BorrowTicket item, ChangeEventArgs e)
         {
             item.IsSelected = (bool)(e.Value ?? false);
+            IsSelectAll = SelectedRows.Count >= BorrowTickets.Count;
         }
-    }
-    public class Product
-    {
-        public bool IsSelected { get; set; }
-        public string Code { get; set; }
-        public string Name { get; set; }
-        public string QRCodeUrl { get; set; }
-        public string Location { get; set; }
-        public string Status { get; set; }
+        private async Task LoadData()
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("toggleLoading", true);
+                var response = await _apiService.Client.GetAsync("historyproductrtc/get-all");
+                var json = await response.Content.ReadAsStringAsync();
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = JsonConvert.DeserializeObject<GenericAPIResponse<ModulaHistories>>(json);
+                    throw new Exception(
+                        string.IsNullOrEmpty(error?.message) ?
+                        "Load dữ liệu không thành công, vui lòng thử lại" : error?.message);
+                }
+                var modulaHistories = JsonConvert.DeserializeObject<ModulaHistories>(json);
+                var borrows = modulaHistories!.data.borrows;
+                var returns = modulaHistories!.data.returns;
+                foreach (var item in borrows) item.IsBorrow = true;
+                foreach (var item in returns) item.IsBorrow = false;
+                BorrowTickets = [.. borrows, .. returns];
+                await JS.InvokeVoidAsync("toggleLoading", false);
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("toggleLoading", false);
+                await _alertService.ShowAsync("Thông báo", ex.Message, "OK");
+            }
+        }
+        private async Task OnRefresh()
+        {
+            BorrowTickets = [];
+            await LoadData();
+        }
+        private async Task OnCall()
+        {
+            if (FocusedRow == null)
+            {
+                await _alertService.ShowAsync("Thông báo", "Vui lòng chọn sản phẩm trước khi gọi khay", "OK");
+                return;
+            }
+            try
+            {
+                await JS.InvokeVoidAsync("toggleLoading", true);
+                var data = new TrayInfo
+                {
+                    Code = FocusedRow.ModulaLocationCode,
+                    Name = FocusedRow.ProductCode,
+                    AxisX = FocusedRow.AxisX,
+                    AxisY = FocusedRow.AxisY
+                };
+                var jsonContent = new StringContent(
+                    JsonConvert.SerializeObject(data),
+                    Encoding.UTF8,
+                    "application/json");
+                var response = await _apiService.Client.PostAsync("modulalocation/call-modula", jsonContent);
+                var json = await response.Content.ReadAsStringAsync();
+                var result = JsonConvert.DeserializeObject<TrayRespond>(json);
+                if (result!.status == 0 || !response.IsSuccessStatusCode) throw new Exception(result.message);
+                await JS.InvokeVoidAsync("toggleLoading", false);
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("toggleLoading", false);
+                await _alertService.ShowAsync("Thông báo", ex.Message, "OK");
+            }
+        }
+        private async Task OnReturn()
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("toggleLoading", false);
+                var response = await _apiService.Client.GetAsync("modulalocation/return-modula");
+                var json = await response.Content.ReadAsStringAsync();
+                var result = JsonConvert.DeserializeObject<TrayRespond>(json);
+                if (result!.status == 0 || !response.IsSuccessStatusCode) throw new Exception(result.message);
+                await JS.InvokeVoidAsync("toggleLoading", false);
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("toggleLoading", false);
+                await _alertService.ShowAsync("Thông báo", ex.Message, "OK");
+            }
+        }
+        private async Task OnDone()
+        {
+            try
+            {
+                var rows = new List<ModulaStatusUpdate>();
+                if (SelectedRows != null && SelectedRows.Count > 0)
+                {
+                    await JS.InvokeVoidAsync("toggleLoading", true);
+                    foreach (var item in SelectedRows)
+                    {
+                        var row = new ModulaStatusUpdate
+                        {
+                            ID = item.ID,
+                            PeopleID = item.PeopleID,
+                            StatusPerson = item.IsBorrow ? 1 : 2
+                        };
+                        rows.Add(row);
+                    }
+                    var jsonContent = new StringContent(
+                        JsonConvert.SerializeObject(rows),
+                        Encoding.UTF8,
+                        "application/json");
+                    var response = await _apiService.Client.PostAsync("historyproductrtc/save-data", jsonContent);
+                    await JS.InvokeVoidAsync("toggleLoading", false);
+                }
+                await JS.InvokeVoidAsync("history.back");
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("toggleLoading", false);
+                await _alertService.ShowAsync("Thông báo", ex.Message, "OK");
+            }
+        }
+        private async Task OnLogOut()
+        {
+            _apiService.RemoveToken();
+            await JS.InvokeVoidAsync("removeElement", ".offcanvas-backdrop");
+            await JS.InvokeVoidAsync("history.back");
+        }
     }
 }

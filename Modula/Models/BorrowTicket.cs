@@ -2,7 +2,7 @@
 
 namespace Modula.Models
 {
-    public class BorrowTicket : INotifyPropertyChanged
+    public class BorrowTicket
     {
         public int ID { get; set; }
         public int TotalPage { get; set; }
@@ -53,19 +53,6 @@ namespace Modula.Models
         public int RowNumber { get; set; }
         public int DualDate { get; set; }
         public bool IsBorrow { get; set; }
-        private bool isSelected;
-
-        public bool IsSelected
-        {
-            get => isSelected;
-            set
-            {
-                if (isSelected == value) return;
-                isSelected = value;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
-            }
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
+        public bool IsSelected { get; set; } = false;
     }
 }
