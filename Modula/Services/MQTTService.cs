@@ -14,6 +14,8 @@ namespace Modula.Services
     {
         private IMqttClient _client;
         private IMqttClientOptions _options;
+        public bool IsConnected = false;
+        public bool IsLoggedIn = false;
 
         public event Action? OnConnected;
 
@@ -59,7 +61,7 @@ namespace Modula.Services
             }
         }
 
-        public async void ConnectAsync(string host, int port, string username, string password, string topic)
+        public async Task ConnectAsync(string host, int port, string username, string password, string topic)
         {
             var factory = new MqttFactory();
             _client = factory.CreateMqttClient();
@@ -75,6 +77,7 @@ namespace Modula.Services
             {
                 Console.WriteLine("MQTT Connected!");
                 OnConnected?.Invoke();
+                IsConnected = true;
 
                 await _client.SubscribeAsync(new MqttTopicFilterBuilder()
                     .WithTopic(topic)
@@ -107,7 +110,7 @@ namespace Modula.Services
             });
 
             // Connect
-            await _client.ConnectAsync(_options);
+                await _client.ConnectAsync(_options);
         }
 
         private RecPushMessage ParseRecPush(string json)

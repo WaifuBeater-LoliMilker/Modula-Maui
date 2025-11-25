@@ -20,14 +20,17 @@ namespace Modula.Components.Pages
         [Inject] private IJSRuntime JS { get; set; } = default!;
         [Inject] private IApiService _apiService { get; set; } = default!;
         [Inject] private IAlertService _alertService { get; set; } = default!;
+        [Inject] private MQTTService _mqttService { get; set; } = default!;
         private string username { get; set; } = "";
         private string password { get; set; } = "";
         private ElementReference usernameInput;
         private ElementReference passwordInput;
 
-        protected override void OnInitialized()
+        protected override async Task OnInitializedAsync()
         {
+            _mqttService.IsLoggedIn = false;
             _apiService.RemoveToken();
+            if(!_mqttService.IsConnected) await ConnectMQTT();
         }
 
         public async Task OnUsernameKeyUp(KeyboardEventArgs e)
@@ -74,6 +77,7 @@ namespace Modula.Components.Pages
 
                 var accountInfo = JsonConvert.DeserializeObject<LogInInfo>(json);
                 _apiService.SetAuthorizationHeader(accountInfo!.access_token);
+                _mqttService.IsLoggedIn = true;
                 await JS.InvokeVoidAsync("toggleLoading", false);
                 Nav.NavigateTo($"/");
             }
@@ -86,7 +90,69 @@ namespace Modula.Components.Pages
 
         public void OnSettingClicked()
         {
+            _mqttService.IsLoggedIn = true; // prevent login during setting
             Nav.NavigateTo($"/settings");
+        }
+        //private void OnConnectedMQTT()
+        //{
+
+        //}
+        private async void OnMessagePushed(RecPushMessage data)
+        {
+            if (!_mqttService.IsLoggedIn)
+                await CallLoginAPI(data);
+        }
+        private async Task ConnectMQTT()
+        {
+            var mqttHost = Preferences.Get("MQTT_HOST", "");
+            var mqttPORT = Convert.ToInt32(Preferences.Get("MQTT_PORT", ""));
+            var mqttUsername = Preferences.Get("MQTT_USERNAME", "");
+            var mqttPassword = Preferences.Get("MQTT_PASSWORD", "");
+            var mqttTopic = Preferences.Get("MQTT_TOPIC", "");
+            //_mqttService.OnConnected -= OnConnectedMQTT;
+            //_mqttService.OnConnected += OnConnectedMQTT;
+            _mqttService.OnRecPushReceived -= OnMessagePushed;
+            _mqttService.OnRecPushReceived += OnMessagePushed;
+
+            try
+            {
+                await _mqttService.ConnectAsync(mqttHost, mqttPORT, mqttUsername, mqttPassword, mqttTopic);
+            }
+            catch (Exception ex)
+            {
+                await _alertService.ShowAsync("Thông báo", ex.Message, "OK");
+            }
+        }
+        private async Task CallLoginAPI(RecPushMessage data)
+        {
+            try
+            {
+                var payload = new
+                {
+                    LoginName = data.info.persionName,
+                };
+                var serialized = JsonConvert.SerializeObject(payload);
+                var jsonContent = new StringContent(serialized,
+                    Encoding.UTF8,
+                    "application/json");
+                if (_apiService.Client.DefaultRequestHeaders.Contains("x-api-key"))
+                    _apiService.Client.DefaultRequestHeaders.Remove("x-api-key");
+                _apiService.Client.DefaultRequestHeaders.Add("x-api-key", AppEnvironment.APIKey);
+                await JS.InvokeVoidAsync("toggleLoading", true);
+                var response = await _apiService.Client.PostAsync($"home/loginiden", jsonContent);
+                await JS.InvokeVoidAsync("toggleLoading", false);
+                if (!response.IsSuccessStatusCode) return;
+                var json = await response.Content.ReadAsStringAsync();
+                var accountInfo = JsonConvert.DeserializeObject<LogInInfo>(json);
+                _apiService.SetAuthorizationHeader(accountInfo!.access_token);
+                _mqttService.IsLoggedIn = true;
+                Nav.NavigateTo($"/");
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("toggleLoading", false);
+                await _alertService.ShowAsync("Thông báo", ex.Message, "OK");
+            }
         }
         //public async Task OnBeforeInternalNaviagetion(LocationChangingContext context)
         //{
