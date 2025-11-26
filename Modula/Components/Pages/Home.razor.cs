@@ -4,11 +4,7 @@ using Modula.Models;
 using Modula.Models.DTO;
 using Modula.Services;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Modula.Components.Pages
 {
@@ -18,22 +14,26 @@ namespace Modula.Components.Pages
         [Inject] private IJSRuntime JS { get; set; } = default!;
         [Inject] private IApiService _apiService { get; set; } = default!;
         [Inject] private IAlertService _alertService { get; set; } = default!;
+        [Inject] private MQTTService _mqttService { get; set; } = default!;
         private bool IsSelectAll;
         private BorrowTicket? FocusedRow { get; set; }
         public List<BorrowTicket> SelectedRows => BorrowTickets.Where(p => p.IsSelected).ToList();
         public List<BorrowTicket> BorrowTickets { get; set; } = [];
+
         public Home()
         {
-
         }
+
         protected override async Task OnInitializedAsync()
         {
             await LoadData();
         }
+
         private void OnRowClick(BorrowTicket item)
         {
             FocusedRow = item;
         }
+
         private void ToggleSelectAll(ChangeEventArgs e)
         {
             bool check = (bool)(e.Value ?? false);
@@ -49,6 +49,7 @@ namespace Modula.Components.Pages
             item.IsSelected = (bool)(e.Value ?? false);
             IsSelectAll = SelectedRows.Count >= BorrowTickets.Count;
         }
+
         private async Task LoadData()
         {
             try
@@ -77,11 +78,13 @@ namespace Modula.Components.Pages
                 await _alertService.ShowAsync("Thông báo", ex.Message, "OK");
             }
         }
+
         private async Task OnRefresh()
         {
             BorrowTickets = [];
             await LoadData();
         }
+
         private async Task OnCall()
         {
             if (FocusedRow == null)
@@ -115,6 +118,7 @@ namespace Modula.Components.Pages
                 await _alertService.ShowAsync("Thông báo", ex.Message, "OK");
             }
         }
+
         private async Task OnReturn()
         {
             try
@@ -132,6 +136,7 @@ namespace Modula.Components.Pages
                 await _alertService.ShowAsync("Thông báo", ex.Message, "OK");
             }
         }
+
         private async Task OnDone()
         {
             try
@@ -157,7 +162,7 @@ namespace Modula.Components.Pages
                     var response = await _apiService.Client.PostAsync("historyproductrtc/save-data", jsonContent);
                     await JS.InvokeVoidAsync("toggleLoading", false);
                 }
-                await JS.InvokeVoidAsync("history.back");
+                await OnLogOut();
             }
             catch (Exception ex)
             {
@@ -165,9 +170,11 @@ namespace Modula.Components.Pages
                 await _alertService.ShowAsync("Thông báo", ex.Message, "OK");
             }
         }
+
         private async Task OnLogOut()
         {
             _apiService.RemoveToken();
+            _mqttService.IsLoggedIn = false;
             await JS.InvokeVoidAsync("removeElement", ".offcanvas-backdrop");
             await JS.InvokeVoidAsync("history.back");
         }

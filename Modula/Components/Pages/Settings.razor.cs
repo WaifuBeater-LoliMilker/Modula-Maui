@@ -1,22 +1,21 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Modula.Services;
 
 namespace Modula.Components.Pages
 {
     public partial class Settings
     {
         [Inject] private IJSRuntime JS { get; set; } = default!;
+        [Inject] private MQTTService _mqttService { get; set; } = default!;
+        [Inject] private IApiService _apiService { get; set; } = default!;
         private string apiURL { get; set; } = "";
         private string mqttHost { get; set; } = "";
         private string mqttPORT { get; set; } = "";
         private string mqttUsername { get; set; } = "";
         private string mqttPassword { get; set; } = "";
         private string mqttTopic { get; set; } = "";
+
         public Settings()
         {
             apiURL = Preferences.Get("API_URL", "http://10.20.29.65:8088/rerpapi/api/");
@@ -26,6 +25,7 @@ namespace Modula.Components.Pages
             mqttPassword = Preferences.Get("MQTT_PASSWORD", "password");
             mqttTopic = Preferences.Get("MQTT_TOPIC", "mqtt/face/2491236/Rec");
         }
+
         private async Task OnSave()
         {
             Preferences.Set("API_URL", apiURL);
@@ -34,6 +34,8 @@ namespace Modula.Components.Pages
             Preferences.Set("MQTT_USERNAME", mqttUsername);
             Preferences.Set("MQTT_PASSWORD", mqttPassword);
             Preferences.Set("MQTT_TOPIC", mqttTopic);
+            _apiService.SetBaseUrl(apiURL);
+            await _mqttService.DisconnectAsync();
             await JS.InvokeVoidAsync("history.back");
         }
     }

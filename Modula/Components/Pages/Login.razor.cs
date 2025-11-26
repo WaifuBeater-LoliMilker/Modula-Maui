@@ -1,16 +1,11 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Modula.Models;
 using Modula.Models.DTO;
 using Modula.Services;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Modula.Components.Pages
 {
@@ -30,7 +25,7 @@ namespace Modula.Components.Pages
         {
             _mqttService.IsLoggedIn = false;
             _apiService.RemoveToken();
-            if(!_mqttService.IsConnected) await ConnectMQTT();
+            if (!_mqttService.IsConnected) await ConnectMQTT();
         }
 
         public async Task OnUsernameKeyUp(KeyboardEventArgs e)
@@ -93,36 +88,32 @@ namespace Modula.Components.Pages
             _mqttService.IsLoggedIn = true; // prevent login during setting
             Nav.NavigateTo($"/settings");
         }
-        //private void OnConnectedMQTT()
-        //{
 
-        //}
         private async void OnMessagePushed(RecPushMessage data)
         {
             if (!_mqttService.IsLoggedIn)
                 await CallLoginAPI(data);
         }
+
         private async Task ConnectMQTT()
         {
-            var mqttHost = Preferences.Get("MQTT_HOST", "");
-            var mqttPORT = Convert.ToInt32(Preferences.Get("MQTT_PORT", ""));
-            var mqttUsername = Preferences.Get("MQTT_USERNAME", "");
-            var mqttPassword = Preferences.Get("MQTT_PASSWORD", "");
-            var mqttTopic = Preferences.Get("MQTT_TOPIC", "");
-            //_mqttService.OnConnected -= OnConnectedMQTT;
-            //_mqttService.OnConnected += OnConnectedMQTT;
-            _mqttService.OnRecPushReceived -= OnMessagePushed;
-            _mqttService.OnRecPushReceived += OnMessagePushed;
-
             try
             {
+                var mqttHost = Preferences.Get("MQTT_HOST", "192.168.1.176");
+                var mqttPORT = Convert.ToInt32(Preferences.Get("MQTT_PORT", "61613"));
+                var mqttUsername = Preferences.Get("MQTT_USERNAME", "admin");
+                var mqttPassword = Preferences.Get("MQTT_PASSWORD", "password");
+                var mqttTopic = Preferences.Get("MQTT_TOPIC", "mqtt/face/2491236/Rec");
+
                 await _mqttService.ConnectAsync(mqttHost, mqttPORT, mqttUsername, mqttPassword, mqttTopic);
+                _mqttService.OnRecPushReceived += OnMessagePushed;
             }
             catch (Exception ex)
             {
                 await _alertService.ShowAsync("Thông báo", ex.Message, "OK");
             }
         }
+
         private async Task CallLoginAPI(RecPushMessage data)
         {
             try
@@ -154,6 +145,7 @@ namespace Modula.Components.Pages
                 await _alertService.ShowAsync("Thông báo", ex.Message, "OK");
             }
         }
+
         //public async Task OnBeforeInternalNaviagetion(LocationChangingContext context)
         //{
         //    if (context.TargetLocation == "/settings" || context.TargetLocation == "/") return;

@@ -12,7 +12,7 @@ namespace Modula.Services
 {
     public class MQTTService
     {
-        private IMqttClient _client;
+        private IMqttClient? _client;
         private IMqttClientOptions _options;
         public bool IsConnected = false;
         public bool IsLoggedIn = false;
@@ -63,6 +63,10 @@ namespace Modula.Services
 
         public async Task ConnectAsync(string host, int port, string username, string password, string topic)
         {
+            if (_client != null)
+            {
+                try { await DisconnectAsync(); } catch { }
+            }
             var factory = new MqttFactory();
             _client = factory.CreateMqttClient();
 
@@ -101,16 +105,45 @@ namespace Modula.Services
             _client.UseApplicationMessageReceivedHandler(e =>
             {
                 string json = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
-
-                if (json.Contains("\"operator\": \"RecPush\""))
+                if (IsConnected)
                 {
-                    var data = ParseRecPush(json);
-                    OnRecPushReceived?.Invoke(data);
+                    if (json.Contains("\"operator\": \"RecPush\""))
+                    {
+                        var data = ParseRecPush(json);
+                        OnRecPushReceived?.Invoke(data);
+                    }
                 }
             });
 
             // Connect
-                await _client.ConnectAsync(_options);
+            await _client.ConnectAsync(_options);
+        }
+
+        public async Task DisconnectAsync()
+        {
+            try
+            {
+                if (_client != null)
+                {
+                    OnRecPushReceived = null;
+                    try
+                    {
+                        await _client.DisconnectAsync();
+                    }
+                    catch { }
+
+                    try { _client.Dispose(); }
+                    catch { }
+
+                    _client = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("MQTT cleanup error: " + ex.Message);
+            }
+            IsConnected = false;
+            IsLoggedIn = false;
         }
 
         private RecPushMessage ParseRecPush(string json)
