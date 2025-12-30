@@ -150,7 +150,7 @@ namespace Modula.Services
         {
             var obj = JsonConvert.DeserializeObject<RecPushMessage>(json);
 
-            if (!string.IsNullOrEmpty(obj.info.pic))
+            if (!string.IsNullOrEmpty(obj?.info?.pic))
                 obj.info.SavedImagePath = SaveBase64Image(obj.info.pic, "RecPush");
 
             return obj;
@@ -185,38 +185,39 @@ namespace Modula.Services
 
     public class RecPushMessage
     {
-        public string operatorName { get; set; }  // "RecPush"
-        public RecPushInfo info { get; set; }
+        public string operatorName { get; set; } = ""; // "RecPush"
+        public RecPushInfo? info { get; set; }
     }
 
     public class RecPushInfo
     {
-        public string customId { get; set; }
-        public string personId { get; set; }
+        public string customId { get; set; } = "";
+        public string personId { get; set; } = "";
         public int RecordID { get; set; }
         public int VerifyStatus { get; set; }
         public int PersonType { get; set; }
         public float similarity1 { get; set; }
         public float similarity2 { get; set; }
         public int Sendintime { get; set; }
-        public string direction { get; set; }
-        public string otype { get; set; }
-        public string persionName { get; set; }
-        public string facesluiceId { get; set; }
-        public string facesluiceName { get; set; }
-        public string idCard { get; set; }
-        public string telnum { get; set; }
-        public string time { get; set; }
-        public string PushType { get; set; }
-        public string OpendoorWay { get; set; }
-        public string cardNum2 { get; set; }
-        public string RFIDCard { get; set; }
-        public string szQrCodeData { get; set; }
-        public string dwFileIndex { get; set; }
-        public string dwFilePos { get; set; }
-        public string pic { get; set; }
+        public string direction { get; set; } = "";
+        public string otype { get; set; } = "";
+        public string persionName { get; set; } = "";
+        public string facesluiceId { get; set; } = "";
+        public string facesluiceName { get; set; } = "";
+        public string idCard { get; set; } = "";
+        public string telnum { get; set; } = "";
+        public string time { get; set; } = "";
+        public string PushType { get; set; } = "";
+        public string OpendoorWay { get; set; } = "";
+        public string cardNum2 { get; set; } = "";
+        public int RFCardMode { get; set; } = 0;
+        public string RFIDCard { get; set; } = "";
+        public string szQrCodeData { get; set; } = "";
+        public string dwFileIndex { get; set; } = "";
+        public string dwFilePos { get; set; } = "";
+        public string pic { get; set; } = "";
 
         // Ảnh lưu ra file
-        public string SavedImagePath { get; set; }
+        public string SavedImagePath { get; set; } = "";
     }
 }

@@ -2,8 +2,8 @@
 {
     public class LogInInfo
     {
-        public string access_token { get; set; }
-        public string expires { get; set; }
+        public string access_token { get; set; } = "";
+        public string expires { get; set; } = "";
 
         public DateTime? ExpiresDateTime
         {
