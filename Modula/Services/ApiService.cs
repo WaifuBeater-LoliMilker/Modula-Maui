@@ -1,12 +1,10 @@
-﻿using System;
-using System.Net.Http;
-
-namespace Modula.Services
+﻿namespace Modula.Services
 {
     public interface IApiService
     {
         public HttpClient Client { get; set; }
         public void SetAuthorizationHeader(string token);
+        public string GetAccessToken();
         public void RemoveToken();
         public void SetBaseUrl(string newBaseUrl);
     }
@@ -31,6 +29,10 @@ namespace Modula.Services
                 Client.DefaultRequestHeaders.Remove("Authorization");
             Client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
             _token = token;
+        }
+        public string GetAccessToken()
+        {
+            return _token;
         }
         public void RemoveToken()
         {

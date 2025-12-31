@@ -68,3 +68,32 @@ function showToast(status, title, text, speed = 200, autotimeout = 1500) {
         position: 'right top'
     })
 }
+// logout when idle
+let timer = null;
+let dotNetRef = null;
+let IDLE_MS = 2 * 60 * 1000; // 2 minutes
+function setIdleTime(min) {
+    IDLE_MS = min * 60 * 1000;
+}
+function resetTimer() {
+    if (!dotNetRef) return;
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+        dotNetRef.invokeMethodAsync("OnIdleLogout");
+    }, IDLE_MS);
+}
+
+window.initIdleLogout = function (ref) {
+    dotNetRef = ref;
+
+    ["mousemove", "mousedown", "keydown", "touchstart", "scroll"].forEach(e =>
+        document.addEventListener(e, resetTimer, true)
+    );
+
+    resetTimer();
+};
+
+window.disposeIdleLogout = function () {
+    clearTimeout(timer);
+    dotNetRef = null;
+};

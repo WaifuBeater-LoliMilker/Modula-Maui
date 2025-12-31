@@ -120,7 +120,7 @@ namespace Modula.Components.Pages
             {
                 var payload = new
                 {
-                    LoginName = data.info.persionName,
+                    LoginName = data.info?.persionName ?? "",
                 };
                 var serialized = JsonConvert.SerializeObject(payload);
                 var jsonContent = new StringContent(serialized,

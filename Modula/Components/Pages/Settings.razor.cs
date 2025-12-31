@@ -15,6 +15,7 @@ namespace Modula.Components.Pages
         private string mqttUsername { get; set; } = "";
         private string mqttPassword { get; set; } = "";
         private string mqttTopic { get; set; } = "";
+        private string idleTimeout { get; set; } = "0.05";
 
         public Settings()
         {
@@ -24,6 +25,7 @@ namespace Modula.Components.Pages
             mqttUsername = Preferences.Get("MQTT_USERNAME", "admin");
             mqttPassword = Preferences.Get("MQTT_PASSWORD", "password");
             mqttTopic = Preferences.Get("MQTT_TOPIC", "mqtt/face/2491236/Rec");
+            idleTimeout = Preferences.Get("IDLE_TIMEOUT", "2");
         }
 
         private async Task OnSave()
@@ -34,6 +36,8 @@ namespace Modula.Components.Pages
             Preferences.Set("MQTT_USERNAME", mqttUsername);
             Preferences.Set("MQTT_PASSWORD", mqttPassword);
             Preferences.Set("MQTT_TOPIC", mqttTopic);
+            Preferences.Set("IDLE_TIMEOUT", idleTimeout);
+            await JS.InvokeVoidAsync("setIdleTime", idleTimeout);
             _apiService.SetBaseUrl(apiURL);
             await _mqttService.DisconnectAsync();
             await JS.InvokeVoidAsync("history.back");

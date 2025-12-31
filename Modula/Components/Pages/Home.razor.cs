@@ -4,28 +4,46 @@ using Modula.Models;
 using Modula.Models.DTO;
 using Modula.Services;
 using Newtonsoft.Json;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
 namespace Modula.Components.Pages
 {
-    public partial class Home
+    public partial class Home : IAsyncDisposable
     {
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IJSRuntime JS { get; set; } = default!;
         [Inject] private IApiService _apiService { get; set; } = default!;
         [Inject] private IAlertService _alertService { get; set; } = default!;
         [Inject] private MQTTService _mqttService { get; set; } = default!;
+        private DotNetObjectReference<Home>? _dotNetRef;
         private bool IsSelectAll;
         private BorrowTicket? FocusedRow { get; set; }
         public List<BorrowTicket> SelectedRows => BorrowTickets.Where(p => p.IsSelected).ToList();
         public List<BorrowTicket> BorrowTickets { get; set; } = [];
+        public string currentUser = "";
 
         public Home()
         {
         }
 
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                _dotNetRef = DotNetObjectReference.Create(this);
+                await JS.InvokeVoidAsync("initIdleLogout", _dotNetRef);
+            }
+        }
+
         protected override async Task OnInitializedAsync()
         {
+            var token = _apiService.GetAccessToken();
+            var handler = new JwtSecurityTokenHandler();
+            var decoded = handler.ReadJwtToken(token);
+            currentUser = decoded.Claims
+                .FirstOrDefault(c => c.Type == "loginname")
+                ?.Value ?? "";
             await LoadData();
         }
 
@@ -177,6 +195,18 @@ namespace Modula.Components.Pages
             _mqttService.IsLoggedIn = false;
             await JS.InvokeVoidAsync("removeElement", ".offcanvas-backdrop");
             await JS.InvokeVoidAsync("history.back");
+        }
+
+        [JSInvokable]
+        public async Task OnIdleLogout()
+        {
+            await JS.InvokeVoidAsync("showToast", "info", "Thông báo", "Tự động đăng xuất", 200, 20000);
+            await OnLogOut();
+        }
+        public async ValueTask DisposeAsync()
+        {
+            await JS.InvokeVoidAsync("disposeIdleLogout");
+            _dotNetRef?.Dispose();
         }
     }
 }
