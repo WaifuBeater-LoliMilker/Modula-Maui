@@ -1,6 +1,4 @@
-﻿using System.ComponentModel;
-
-namespace Modula.Models
+﻿namespace Modula.Models
 {
     public class BorrowTicket
     {
@@ -43,9 +41,12 @@ namespace Modula.Models
         public bool? IsDelete { get; set; }
         public string DepartmentName { get; set; } = "";
         public string ProductQRCode { get; set; } = "";
+        public string ProductQRCodeConfirm { get; set; } = "";
+        public string ProductQRCodeConfirmReturn { get; set; } = "";
         public string UnitCountName { get; set; } = "";
         public string UserZaloID { get; set; } = "";
         public string ModulaLocationName { get; set; } = "";
+        public string ModulaLocationCodeConfirm { get; set; } = "";
         public string ModulaLocationCode { get; set; } = "";
         public int AxisX { get; set; }
         public int AxisY { get; set; }

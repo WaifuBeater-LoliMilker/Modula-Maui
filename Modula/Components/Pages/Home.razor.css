@@ -17,12 +17,120 @@ thead th {
     background-color: #abcfe9
 }
 
-@media (max-width: 520px) {
+.modal-section-header {
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+    .list-group-item:first-child {
+        border-top: none;
+    }
+
+    .list-group-item:last-child {
+        border-bottom: none;
+    }
+
+@media (max-width: 680px) {
     .btn-action {
         display: none;
+    }
+
+    /* Make modal full screen on small devices */
+    #selectedItemsModal .modal-dialog {
+        margin: 0;
+        max-width: 100%;
+        height: 100%;
+    }
+
+    #selectedItemsModal .modal-content {
+        height: 100%;
+        border-radius: 0;
+    }
+
+    /* Stack columns vertically on small screens */
+    #selectedItemsModal .row {
+        flex-direction: column;
+    }
+
+    #selectedItemsModal .col-6 {
+        width: 100%;
+        max-width: 100%;
+        flex: 0 0 100%;
+        border-right: none !important;
+        border-bottom: 1px solid #dee2e6;
     }
 }
 
 #side_bar {
     width: min(280px, 70%);
+}
+
+/* Status badge styles */
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* Optional: Add hover effect to list items */
+.list-group-item:hover {
+    background-color: rgba(0, 148, 255, 0.05);
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.status-1 {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.status-2 {
+    background-color: #fff3cd;
+    color: #155724;
+}
+
+/* Input group custom styles */
+.input-group.input-group-sm {
+    max-width: 100%;
+}
+
+.input-group .btn-outline-secondary {
+    border-color: #6c757d;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+    .input-group .btn-outline-secondary:hover {
+        background-color: #6c757d;
+        color: white;
+    }
+
+/* Adjust input group on mobile */
+@media (max-width: 520px) {
+    .input-group {
+        flex-wrap: nowrap;
+    }
+
+        .input-group .form-control {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+}
+
+/* Success indicator */
+.text-success small {
+    display: flex;
+    align-items: center;
+    font-size: 0.75rem;
 }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Modula.Models;
 using Modula.Models.DTO;
@@ -21,7 +22,15 @@ namespace Modula.Components.Pages
         private BorrowTicket? FocusedRow { get; set; }
         public List<BorrowTicket> SelectedRows => BorrowTickets.Where(p => p.IsSelected).ToList();
         public List<BorrowTicket> BorrowTickets { get; set; } = [];
-        public string currentUser = "";
+        private int SelectedCount => BorrowTickets?.Count(x => x.IsSelected) ?? 0;
+        private int SelectedMuonCount => SelectedMuonItems.Count();
+        private int SelectedTraCount => SelectedTraItems.Count();
+        private IEnumerable<BorrowTicket> SelectedMuonItems =>
+        BorrowTickets?.Where(x => x.IsSelected && x.IsBorrow) ?? [];
+        private IEnumerable<BorrowTicket> SelectedTraItems =>
+            BorrowTickets?.Where(x => x.IsSelected && !x.IsBorrow) ?? [];
+        public string currentUserEmployeeCode = "";
+        public string currentUserFullname = "";
 
         public Home()
         {
@@ -41,8 +50,11 @@ namespace Modula.Components.Pages
             var token = _apiService.GetAccessToken();
             var handler = new JwtSecurityTokenHandler();
             var decoded = handler.ReadJwtToken(token);
-            currentUser = decoded.Claims
+            currentUserEmployeeCode = decoded.Claims
                 .FirstOrDefault(c => c.Type == "loginname")
+                ?.Value ?? "";
+            currentUserFullname = decoded.Claims
+                .FirstOrDefault(c => c.Type == "fullname")
                 ?.Value ?? "";
             await LoadData();
         }
@@ -159,6 +171,15 @@ namespace Modula.Components.Pages
         {
             try
             {
+                if (SelectedRows.Any(s =>
+                    (s.IsBorrow && s.ProductQRCode != s.ProductQRCodeConfirm) ||
+                    (!s.IsBorrow && (s.ModulaLocationCode != s.ModulaLocationCodeConfirm || s.ProductQRCode != s.ProductQRCodeConfirmReturn))
+                    )
+                )
+                {
+                    await _alertService.ShowAsync("Thông báo", "Vui lòng nhập mã QR/Vị trí chính xác", "OK");
+                    return;
+                }
                 var rows = new List<ModulaStatusUpdate>();
                 if (SelectedRows != null && SelectedRows.Count > 0)
                 {
@@ -188,11 +209,118 @@ namespace Modula.Components.Pages
                 await _alertService.ShowAsync("Thông báo", ex.Message, "OK");
             }
         }
+        private string GetStatusBadgeClass(string statusText)
+        {
+            return statusText switch
+            {
+                "Đăng kí mượn" => "status-badge status-1",
+                //"Đăng kí trả" => "status-badge status-2",
+                _ => "status-badge status-2"
+            };
+        }
+        private async Task HandleKeyDown(KeyboardEventArgs e, BorrowTicket item)
+        {
+            if (e.Key == "Enter" || e.Key == "NumpadEnter")
+            {
+                if (string.IsNullOrEmpty(item.ProductQRCodeConfirm) || item.ProductQRCodeConfirm != item.ProductQRCode)
+                {
+                    await JS.InvokeVoidAsync("selectAllTextBySelector",
+                        $"#qr-input-{item.ProductQRCode.Replace(" ", "-")}");
+                    await JS.InvokeVoidAsync("addWarningClass",
+                        $"#qr-input-{item.ProductQRCode.Replace(" ", "-")}");
+                    return;
+                }
+                int currentIndex;
+                var list = SelectedMuonItems.ToList();
+                currentIndex = list.IndexOf(item);
+
+                if (currentIndex < list.Count - 1)
+                {
+                    await JS.InvokeVoidAsync("removeWarningClass",
+                        $"#qr-input-{item.ProductQRCode.Replace(" ", "-")}");
+                    var nextItem = list[currentIndex + 1];
+                    var inputId = $"qr-input-{nextItem.ProductQRCode.Replace(" ", "-")}";
+                    await JS.InvokeVoidAsync("setFocusById", inputId);
+                }
+            }
+        }
+        private void OpenModal()
+        {
+            foreach (var item in BorrowTickets)
+            {
+                item.ProductQRCodeConfirm = item.ModulaLocationCodeConfirm = "";
+            }
+        }
+        private async Task ResetInput(BorrowTicket item)
+        {
+            item.ProductQRCodeConfirm = "";
+            StateHasChanged();
+            await JS.InvokeVoidAsync("setFocusById", $"qr-input-{item.ProductQRCode.Replace(" ", "-")}");
+        }
+        private async Task HandleQRCodeKeyDown(KeyboardEventArgs e, BorrowTicket item)
+        {
+            if (e.Key == "Enter" || e.Key == "NumpadEnter")
+            {
+                if (string.IsNullOrEmpty(item.ProductQRCodeConfirmReturn) || item.ProductQRCodeConfirmReturn != item.ProductQRCode)
+                {
+                    await JS.InvokeVoidAsync("selectAllTextBySelector",
+                        $"#qr-input-return-{item.ProductQRCode.Replace(" ", "-")}");
+                    await JS.InvokeVoidAsync("addWarningClass",
+                        $"#qr-input-return-{item.ProductQRCode.Replace(" ", "-")}");
+                    return;
+                }
+                await JS.InvokeVoidAsync("removeWarningClass",
+                    $"#qr-input-return-{item.ProductQRCode.Replace(" ", "-")}");
+                var locationId = $"location-input-{item.ProductQRCode.Replace(" ", "-")}";
+                await JS.InvokeVoidAsync("setFocusById", locationId);
+            }
+        }
+
+        private async Task HandleLocationKeyDown(KeyboardEventArgs e, BorrowTicket item)
+        {
+            if (e.Key == "Enter" || e.Key == "NumpadEnter")
+            {
+                if (string.IsNullOrEmpty(item.ModulaLocationCodeConfirm) || item.ModulaLocationCodeConfirm != item.ModulaLocationCode)
+                {
+                    await JS.InvokeVoidAsync("selectAllTextBySelector",
+                        $"#location-input-{item.ProductQRCode.Replace(" ", "-")}");
+                    await JS.InvokeVoidAsync("addWarningClass",
+                        $"#location-input-{item.ProductQRCode.Replace(" ", "-")}");
+                    return;
+                }
+                await JS.InvokeVoidAsync("removeWarningClass",
+                    $"#location-input-{item.ProductQRCode.Replace(" ", "-")}");
+                var list = SelectedTraItems.ToList();
+                int currentIndex = list.IndexOf(item);
+
+                if (currentIndex < list.Count - 1)
+                {
+                    var nextItem = list[currentIndex + 1];
+
+                    var nextQrId = $"qr-input-return-{nextItem.ProductQRCode.Replace(" ", "-")}";
+                    await JS.InvokeVoidAsync("setFocusById", nextQrId);
+                }
+            }
+        }
+        private async Task ResetQRCodeInput(BorrowTicket item)
+        {
+            item.ProductQRCodeConfirmReturn = "";
+            StateHasChanged();
+            await JS.InvokeVoidAsync("setFocusById", $"qr-input-return-{item.ProductQRCode.Replace(" ", "-")}");
+        }
+
+        private async Task ResetLocationInput(BorrowTicket item)
+        {
+            item.ModulaLocationCodeConfirm = "";
+            StateHasChanged();
+            await JS.InvokeVoidAsync("setFocusById", $"location-input-{item.ProductQRCode.Replace(" ", "-")}");
+        }
 
         private async Task OnLogOut()
         {
             _apiService.RemoveToken();
             _mqttService.IsLoggedIn = false;
+            await JS.InvokeVoidAsync("eval", "$('#selectedItemsModal').modal('hide')");
             await JS.InvokeVoidAsync("removeElement", ".offcanvas-backdrop");
             await JS.InvokeVoidAsync("history.back");
         }

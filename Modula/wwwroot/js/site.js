@@ -49,6 +49,10 @@ function run_waitMe(effect) {
 function selectAllText(element) {
     element.select();
 }
+function selectAllTextBySelector(selector) {
+    const el = document.querySelector(selector);
+    el?.select();
+}
 function showToast(status, title, text, speed = 200, autotimeout = 1500) {
     new Notify({
         status: status,
@@ -97,3 +101,15 @@ window.disposeIdleLogout = function () {
     clearTimeout(timer);
     dotNetRef = null;
 };
+function addWarningClass(selector) {
+    const els = document.querySelectorAll(selector);
+    els.forEach(el => {
+        el.classList.add('invalid')
+    })
+}
+function removeWarningClass(selector) {
+    const els = document.querySelectorAll(selector);
+    els.forEach(el => {
+        el.classList.remove('invalid')
+    })
+}
