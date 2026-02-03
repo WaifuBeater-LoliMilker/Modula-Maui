@@ -223,7 +223,7 @@
                                                             <i class="fa-solid fa-rotate-left"></i>
                                                         </button>
                                                     </div>
-                                                    @if (!string.IsNullOrEmpty(item.ModulaLocationCodeConfirm) && item.ModulaLocationCodeConfirm == item.ModulaLocationCode)
+                                                    @if (!string.IsNullOrEmpty(item.ModulaLocationCodeConfirm) && item.ModulaLocationCodeConfirm == item.ModulaLocationDetailCode)
                                                     {
                                                         <small class="text-success">
                                                             <i class="fa-solid fa-check me-1"></i>
@@ -249,9 +249,12 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fa-solid fa-ban"></i> Cancel</button>
-                <button type="button" class="btn btn-primary" @onclick="OnDone">
-                    <i class="fa-solid fa-check"></i> OK
+                    <i class="fa-solid fa-ban"></i> Hủy</button>
+                <button type="button" class="btn btn-primary" @onclick="OnDone" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-floppy-disk"></i> Lưu
+                </button>
+                <button type="button" class="btn btn-primary" @onclick="OnDoneAndLogOut">
+                    <i class="fa-solid fa-check"></i> Lưu và thoát
                 </button>
             </div>
         </div>

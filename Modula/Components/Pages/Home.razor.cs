@@ -25,10 +25,13 @@ namespace Modula.Components.Pages
         private int SelectedCount => BorrowTickets?.Count(x => x.IsSelected) ?? 0;
         private int SelectedMuonCount => SelectedMuonItems.Count();
         private int SelectedTraCount => SelectedTraItems.Count();
+
         private IEnumerable<BorrowTicket> SelectedMuonItems =>
         BorrowTickets?.Where(x => x.IsSelected && x.IsBorrow) ?? [];
+
         private IEnumerable<BorrowTicket> SelectedTraItems =>
             BorrowTickets?.Where(x => x.IsSelected && !x.IsBorrow) ?? [];
+
         public string currentUserEmployeeCode = "";
         public string currentUserFullname = "";
 
@@ -173,7 +176,7 @@ namespace Modula.Components.Pages
             {
                 if (SelectedRows.Any(s =>
                     (s.IsBorrow && s.ProductQRCode != s.ProductQRCodeConfirm) ||
-                    (!s.IsBorrow && (s.ModulaLocationCode != s.ModulaLocationCodeConfirm || s.ProductQRCode != s.ProductQRCodeConfirmReturn))
+                    (!s.IsBorrow && (s.ModulaLocationDetailCode != s.ModulaLocationCodeConfirm || s.ProductQRCode != s.ProductQRCodeConfirmReturn))
                     )
                 )
                 {
@@ -199,9 +202,13 @@ namespace Modula.Components.Pages
                         Encoding.UTF8,
                         "application/json");
                     var response = await _apiService.Client.PostAsync("historyproductrtc/save-data", jsonContent);
+                    await JS.InvokeVoidAsync("showToast", "success", "Thông báo", "Lưu dữ liệu thành công", 200, 3000);
                     await JS.InvokeVoidAsync("toggleLoading", false);
+                    foreach (var item in BorrowTickets)
+                    {
+                        item.ProductQRCodeConfirm = item.ModulaLocationCodeConfirm = "";
+                    }
                 }
-                await OnLogOut();
             }
             catch (Exception ex)
             {
@@ -209,6 +216,13 @@ namespace Modula.Components.Pages
                 await _alertService.ShowAsync("Thông báo", ex.Message, "OK");
             }
         }
+
+        private async Task OnDoneAndLogOut()
+        {
+            await OnDone();
+            await OnLogOut();
+        }
+
         private string GetStatusBadgeClass(string statusText)
         {
             return statusText switch
@@ -218,6 +232,7 @@ namespace Modula.Components.Pages
                 _ => "status-badge status-2"
             };
         }
+
         private async Task HandleKeyDown(KeyboardEventArgs e, BorrowTicket item)
         {
             if (e.Key == "Enter" || e.Key == "NumpadEnter")
@@ -244,19 +259,19 @@ namespace Modula.Components.Pages
                 }
             }
         }
+
         private void OpenModal()
         {
-            foreach (var item in BorrowTickets)
-            {
-                item.ProductQRCodeConfirm = item.ModulaLocationCodeConfirm = "";
-            }
+
         }
+
         private async Task ResetInput(BorrowTicket item)
         {
             item.ProductQRCodeConfirm = "";
             StateHasChanged();
             await JS.InvokeVoidAsync("setFocusById", $"qr-input-{item.ProductQRCode.Replace(" ", "-")}");
         }
+
         private async Task HandleQRCodeKeyDown(KeyboardEventArgs e, BorrowTicket item)
         {
             if (e.Key == "Enter" || e.Key == "NumpadEnter")
@@ -280,7 +295,7 @@ namespace Modula.Components.Pages
         {
             if (e.Key == "Enter" || e.Key == "NumpadEnter")
             {
-                if (string.IsNullOrEmpty(item.ModulaLocationCodeConfirm) || item.ModulaLocationCodeConfirm != item.ModulaLocationCode)
+                if (string.IsNullOrEmpty(item.ModulaLocationCodeConfirm) || item.ModulaLocationCodeConfirm != item.ModulaLocationDetailCode)
                 {
                     await JS.InvokeVoidAsync("selectAllTextBySelector",
                         $"#location-input-{item.ProductQRCode.Replace(" ", "-")}");
@@ -302,6 +317,7 @@ namespace Modula.Components.Pages
                 }
             }
         }
+
         private async Task ResetQRCodeInput(BorrowTicket item)
         {
             item.ProductQRCodeConfirmReturn = "";
@@ -331,6 +347,7 @@ namespace Modula.Components.Pages
             await JS.InvokeVoidAsync("showToast", "info", "Thông báo", "Tự động đăng xuất", 200, 20000);
             await OnLogOut();
         }
+
         public async ValueTask DisposeAsync()
         {
             await JS.InvokeVoidAsync("disposeIdleLogout");

@@ -19,8 +19,8 @@ namespace Modula.Components.Pages
 
         public Settings()
         {
-            apiURL = Preferences.Get("API_URL", "http://10.20.29.65:8088/rerpapi/api/");
-            mqttHost = Preferences.Get("MQTT_HOST", "192.168.1.176");
+            apiURL = Preferences.Get("API_URL", "http://192.168.1.3:9090/api/api/");
+            mqttHost = Preferences.Get("MQTT_HOST", "192.168.1.2");
             mqttPORT = Preferences.Get("MQTT_PORT", "61613");
             mqttUsername = Preferences.Get("MQTT_USERNAME", "admin");
             mqttPassword = Preferences.Get("MQTT_PASSWORD", "password");

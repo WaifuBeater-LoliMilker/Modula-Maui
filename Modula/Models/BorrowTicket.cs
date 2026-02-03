@@ -48,6 +48,8 @@
         public string ModulaLocationName { get; set; } = "";
         public string ModulaLocationCodeConfirm { get; set; } = "";
         public string ModulaLocationCode { get; set; } = "";
+        public string ModulaLocationDetailCode { get; set; } = "";
+        public string ModulaLocationDetailName { get; set; } = "";
         public int AxisX { get; set; }
         public int AxisY { get; set; }
         public string StatusText { get; set; } = "";
