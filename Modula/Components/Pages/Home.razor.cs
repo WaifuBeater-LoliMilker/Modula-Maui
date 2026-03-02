@@ -54,7 +54,7 @@ namespace Modula.Components.Pages
             var handler = new JwtSecurityTokenHandler();
             var decoded = handler.ReadJwtToken(token);
             currentUserEmployeeCode = decoded.Claims
-                .FirstOrDefault(c => c.Type == "loginname")
+                .FirstOrDefault(c => c.Type == "code")
                 ?.Value ?? "";
             currentUserFullname = decoded.Claims
                 .FirstOrDefault(c => c.Type == "fullname")
