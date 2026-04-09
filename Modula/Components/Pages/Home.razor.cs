@@ -120,29 +120,40 @@ namespace Modula.Components.Pages
 
         private async Task OnCall()
         {
-            if (FocusedRow == null)
+            var row = FocusedRow;
+            if (row == null)
             {
                 await _alertService.ShowAsync("Thông báo", "Vui lòng chọn sản phẩm trước khi gọi khay", "OK");
                 return;
             }
+
             try
             {
                 await JS.InvokeVoidAsync("toggleLoading", true);
+
                 var data = new TrayInfo
                 {
-                    Code = FocusedRow.ModulaLocationCode,
-                    Name = FocusedRow.ProductCode,
-                    AxisX = FocusedRow.AxisX,
-                    AxisY = FocusedRow.AxisY
+                    Code = row.ModulaLocationCode,
+                    Name = row.ProductCode,
+                    AxisX = row.AxisX,
+                    AxisY = row.AxisY
                 };
+
                 var jsonContent = new StringContent(
                     JsonConvert.SerializeObject(data),
                     Encoding.UTF8,
                     "application/json");
-                var response = await _apiService.Client.PostAsync("modulalocation/call-modula", jsonContent);
+
+                var response = await _apiService.Client.PostAsync(
+                    "modulalocation/call-modula",
+                    jsonContent);
+
                 var json = await response.Content.ReadAsStringAsync();
-                var result = JsonConvert.DeserializeObject<TrayRespond>(json);
-                if (result!.status == 0 || !response.IsSuccessStatusCode) throw new Exception(result.message);
+
+                var result = JsonConvert.DeserializeObject<TrayRespond>(json) ?? throw new Exception("Invalid API response");
+                if (result.status == 0 || !response.IsSuccessStatusCode)
+                    throw new Exception(result.message);
+
                 await JS.InvokeVoidAsync("toggleLoading", false);
             }
             catch (Exception ex)
@@ -151,7 +162,6 @@ namespace Modula.Components.Pages
                 await _alertService.ShowAsync("Thông báo", ex.Message, "OK");
             }
         }
-
         private async Task OnReturn()
         {
             try
