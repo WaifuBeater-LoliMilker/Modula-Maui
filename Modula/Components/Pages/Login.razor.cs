@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Modula.Models;
@@ -14,6 +14,7 @@ namespace Modula.Components.Pages
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IJSRuntime JS { get; set; } = default!;
         [Inject] private IApiService _apiService { get; set; } = default!;
+        [Inject] private IModulaApiService _modulaApiService { get; set; } = default!;
         [Inject] private IAlertService _alertService { get; set; } = default!;
         [Inject] private MQTTService _mqttService { get; set; } = default!;
         private string username { get; set; } = "";
@@ -25,6 +26,7 @@ namespace Modula.Components.Pages
         {
             _mqttService.IsLoggedIn = false;
             _apiService.RemoveToken();
+            _modulaApiService.RemoveToken();
             if (!_mqttService.IsConnected) await ConnectMQTT();
         }
 
@@ -72,6 +74,7 @@ namespace Modula.Components.Pages
 
                 var accountInfo = JsonConvert.DeserializeObject<LogInInfo>(json);
                 _apiService.SetAuthorizationHeader(accountInfo!.access_token);
+                _modulaApiService.SetAuthorizationHeader(accountInfo!.access_token);
                 _mqttService.IsLoggedIn = true;
                 await JS.InvokeVoidAsync("toggleLoading", false);
                 Nav.NavigateTo($"/");
@@ -91,8 +94,11 @@ namespace Modula.Components.Pages
 
         private async void OnMessagePushed(RecPushMessage data)
         {
-            if (!_mqttService.IsLoggedIn)
-                await CallLoginAPI(data);
+            await InvokeAsync(async () => //without InvokeAsync here the failed api can cause crash as exception occured on main thread
+            {
+                if (!_mqttService.IsLoggedIn)
+                    await CallLoginAPI(data);
+            });
         }
 
         private async Task ConnectMQTT()
@@ -136,6 +142,7 @@ namespace Modula.Components.Pages
                 var json = await response.Content.ReadAsStringAsync();
                 var accountInfo = JsonConvert.DeserializeObject<LogInInfo>(json);
                 _apiService.SetAuthorizationHeader(accountInfo!.access_token);
+                _modulaApiService.SetAuthorizationHeader(accountInfo!.access_token);
                 _mqttService.IsLoggedIn = true;
                 Nav.NavigateTo($"/");
             }

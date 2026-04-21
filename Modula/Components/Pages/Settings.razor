@@ -1,8 +1,12 @@
-﻿@page "/settings"
+@page "/settings"
 
 <div class="p-5">
     <label class="fw-bold" for="api_url">API URL</label>
     <input id="api_url" class="form-control mb-2" @bind="apiURL"
+           @bind:event="oninput" />
+
+    <label class="fw-bold" for="modula_api_url">Modula API URL</label>
+    <input id="modula_api_url" class="form-control mb-2" @bind="modulaApiURL"
            @bind:event="oninput" />
 
     <label class="fw-bold" for="mqtt_host">MQTT host</label>

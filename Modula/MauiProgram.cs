@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Modula.Services;
 
 namespace Modula
@@ -19,6 +19,7 @@ namespace Modula
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddSingleton<IAlertService, AlertService>();
             builder.Services.AddSingleton<IApiService, ApiService>();
+            builder.Services.AddSingleton<IModulaApiService, ModulaApiService>();
             builder.Services.AddSingleton<MQTTService>();
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

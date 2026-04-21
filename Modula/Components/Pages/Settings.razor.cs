@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using Modula.Services;
 
@@ -9,7 +9,9 @@ namespace Modula.Components.Pages
         [Inject] private IJSRuntime JS { get; set; } = default!;
         [Inject] private MQTTService _mqttService { get; set; } = default!;
         [Inject] private IApiService _apiService { get; set; } = default!;
+        [Inject] private IModulaApiService _modulaApiService { get; set; } = default!;
         private string apiURL { get; set; } = "";
+        private string modulaApiURL { get; set; } = "";
         private string mqttHost { get; set; } = "";
         private string mqttPORT { get; set; } = "";
         private string mqttUsername { get; set; } = "";
@@ -20,6 +22,7 @@ namespace Modula.Components.Pages
         public Settings()
         {
             apiURL = Preferences.Get("API_URL", "http://10.20.29.65:8088/rerpapi/api/");
+            modulaApiURL = Preferences.Get("MODULA_API_URL", "http://10.20.29.65:8088/rerpapi/api/");
             mqttHost = Preferences.Get("MQTT_HOST", "192.168.1.176");
             mqttPORT = Preferences.Get("MQTT_PORT", "61613");
             mqttUsername = Preferences.Get("MQTT_USERNAME", "admin");
@@ -39,6 +42,7 @@ namespace Modula.Components.Pages
             Preferences.Set("IDLE_TIMEOUT", idleTimeout);
             await JS.InvokeVoidAsync("setIdleTime", idleTimeout);
             _apiService.SetBaseUrl(apiURL);
+            _modulaApiService.SetBaseUrl(modulaApiURL);
             await _mqttService.DisconnectAsync();
             await JS.InvokeVoidAsync("history.back");
         }

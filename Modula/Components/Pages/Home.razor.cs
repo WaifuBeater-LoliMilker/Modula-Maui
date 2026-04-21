@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using Modula.Models;
 using Modula.Models.DTO;
@@ -14,6 +14,7 @@ namespace Modula.Components.Pages
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IJSRuntime JS { get; set; } = default!;
         [Inject] private IApiService _apiService { get; set; } = default!;
+        [Inject] private IModulaApiService _modulaApiService { get; set; } = default!;
         [Inject] private IAlertService _alertService { get; set; } = default!;
         [Inject] private MQTTService _mqttService { get; set; } = default!;
         private DotNetObjectReference<Home>? _dotNetRef;
@@ -42,7 +43,7 @@ namespace Modula.Components.Pages
             var handler = new JwtSecurityTokenHandler();
             var decoded = handler.ReadJwtToken(token);
             currentUser = decoded.Claims
-                .FirstOrDefault(c => c.Type == "loginname")
+                .FirstOrDefault(c => c.Type == "code")
                 ?.Value ?? "";
             await LoadData();
         }
@@ -105,29 +106,40 @@ namespace Modula.Components.Pages
 
         private async Task OnCall()
         {
-            if (FocusedRow == null)
+            var row = FocusedRow;
+            if (row == null)
             {
                 await _alertService.ShowAsync("Thông báo", "Vui lòng chọn sản phẩm trước khi gọi khay", "OK");
                 return;
             }
+
             try
             {
                 await JS.InvokeVoidAsync("toggleLoading", true);
+
                 var data = new TrayInfo
                 {
-                    Code = FocusedRow.ModulaLocationCode,
-                    Name = FocusedRow.ProductCode,
-                    AxisX = FocusedRow.AxisX,
-                    AxisY = FocusedRow.AxisY
+                    Code = row.ModulaLocationCode,
+                    Name = row.ProductCode,
+                    AxisX = row.AxisX,
+                    AxisY = row.AxisY
                 };
+
                 var jsonContent = new StringContent(
                     JsonConvert.SerializeObject(data),
                     Encoding.UTF8,
                     "application/json");
-                var response = await _apiService.Client.PostAsync("modulalocation/call-modula", jsonContent);
+
+                var response = await _modulaApiService.Client.PostAsync(
+                    "modulalocation/call-modula",
+                    jsonContent);
+
                 var json = await response.Content.ReadAsStringAsync();
-                var result = JsonConvert.DeserializeObject<TrayRespond>(json);
-                if (result!.status == 0 || !response.IsSuccessStatusCode) throw new Exception(result.message);
+
+                var result = JsonConvert.DeserializeObject<TrayRespond>(json) ?? throw new Exception($"Invalid API response.\n Request string: {data}\n Response string: {json}\n Status Code: {response.StatusCode}");
+                if (result.status == 0 || !response.IsSuccessStatusCode)
+                    throw new Exception(result.message);
+
                 await JS.InvokeVoidAsync("toggleLoading", false);
             }
             catch (Exception ex)
@@ -142,7 +154,7 @@ namespace Modula.Components.Pages
             try
             {
                 await JS.InvokeVoidAsync("toggleLoading", false);
-                var response = await _apiService.Client.GetAsync("modulalocation/return-modula");
+                var response = await _modulaApiService.Client.GetAsync("modulalocation/return-modula");
                 var json = await response.Content.ReadAsStringAsync();
                 var result = JsonConvert.DeserializeObject<TrayRespond>(json);
                 if (result!.status == 0 || !response.IsSuccessStatusCode) throw new Exception(result.message);
@@ -192,6 +204,7 @@ namespace Modula.Components.Pages
         private async Task OnLogOut()
         {
             _apiService.RemoveToken();
+            _modulaApiService.RemoveToken();
             _mqttService.IsLoggedIn = false;
             await JS.InvokeVoidAsync("removeElement", ".offcanvas-backdrop");
             await JS.InvokeVoidAsync("history.back");
